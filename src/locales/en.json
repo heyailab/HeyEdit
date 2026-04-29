@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "HeyEdit",
+    "version": "Version"
+  },
+  "titlebar": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close",
+    "hide_to_tray": "Hide to Tray"
+  },
+  "tray": {
+    "show": "Show Window",
+    "hide": "Hide Window",
+    "quit": "Quit"
+  },
+  "layout": {
+    "sidebar": "Sidebar",
+    "header": "Header",
+    "sidebar_header": "Sidebar + Header",
+    "fullscreen": "Full Screen",
+    "switch": "Switch Layout"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_system": "System",
+    "language": "Language",
+    "language_en": "English",
+    "language_zh": "Chinese",
+    "autostart": "Launch at Login",
+    "autostart_desc": "Automatically start the app when you log in",
+    "close_to_tray": "Close to Tray",
+    "close_to_tray_desc": "Hide to system tray instead of quitting",
+    "update": "Update",
+    "update_endpoint": "Update Endpoint",
+    "update_endpoint_placeholder": "https://your-server.com/update/{{target}}/{{arch}}/{{current_version}}",
+    "check_update": "Check for Updates",
+    "no_update": "You are up to date",
+    "update_available": "Update Available",
+    "update_version": "New version: {{version}}",
+    "shortcuts": "Keyboard Shortcuts",
+    "about": "About"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "global": "Global",
+    "toggle_theme": "Toggle Theme",
+    "toggle_sidebar": "Toggle Sidebar",
+    "settings": "Open Settings",
+    "search": "Search"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "test": "Send Test Notification",
+    "test_title": "HeyEdit",
+    "test_body": "This is a test notification"
+  },
+  "clipboard": {
+    "title": "Clipboard",
+    "copy": "Copy",
+    "paste": "Paste",
+    "copied": "Copied to clipboard",
+    "copy_failed": "Copy failed"
+  },
+  "errors": {
+    "boundary_title": "Something went wrong",
+    "boundary_message": "The application encountered an unexpected error.",
+    "retry": "Try Again",
+    "report": "Report Issue"
+  },
+  "editor": {
+    "untitled": "Untitled",
+    "new_file": "New File",
+    "open_file": "Open File",
+    "save_file": "Save",
+    "save_as": "Save As",
+    "no_open_file": "No file open",
+    "open_or_new": "Open a file or create a new one to start editing",
+    "unsaved_changes": "Unsaved Changes",
+    "file_saved": "Saved",
+    "open_button": "Open File",
+    "new_button": "New File",
+    "placeholder": "Start typing your Markdown...",
+    "word_count": "{{count}} words",
+    "char_count": "{{count}} chars"
+  },
+  "sidebar": {
+    "files": "Files",
+    "no_files": "No recent files"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
+  "productName": "HeyEdit",
+  "version": "0.1.0",
+  "identifier": "com.heyedit.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "title": "HeyEdit",
+        "label": "main",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "decorations": false,
+        "center": true,
+        "visible": true,
+        "shadow": true,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+	  "assetProtocol": {
+		"enable": true,
+		"scope": ["**"]
+	  },
+      "csp": {
+        "default-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "script-src": "'self'",
+        "connect-src": "'self' ipc: http://ipc.localhost",
+        "img-src": "'self' asset: http://asset.localhost https://asset.localhost https: http: data:",
+        "font-src": "'self'"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [],
+      "dangerousInsecureTransportProtocol": false
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "HeyEdit",
+    "version": "版本"
+  },
+  "titlebar": {
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "还原",
+    "close": "关闭",
+    "hide_to_tray": "隐藏到托盘"
+  },
+  "tray": {
+    "show": "显示窗口",
+    "hide": "隐藏窗口",
+    "quit": "退出"
+  },
+  "layout": {
+    "sidebar": "侧边栏",
+    "header": "顶部导航",
+    "sidebar_header": "侧边栏 + 顶部导航",
+    "fullscreen": "全屏",
+    "switch": "切换布局"
+  },
+  "settings": {
+    "title": "设置",
+    "general": "通用",
+    "appearance": "外观",
+    "theme": "主题",
+    "theme_light": "浅色",
+    "theme_dark": "深色",
+    "theme_system": "跟随系统",
+    "language": "语言",
+    "language_en": "英语",
+    "language_zh": "中文",
+    "autostart": "开机自启动",
+    "autostart_desc": "登录系统时自动启动应用",
+    "close_to_tray": "关闭到托盘",
+    "close_to_tray_desc": "关闭窗口时最小化到系统托盘",
+    "update": "更新",
+    "update_endpoint": "更新地址",
+    "update_endpoint_placeholder": "https://your-server.com/update/{{target}}/{{arch}}/{{current_version}}",
+    "check_update": "检查更新",
+    "no_update": "已是最新版本",
+    "update_available": "发现新版本",
+    "update_version": "新版本：{{version}}",
+    "shortcuts": "快捷键",
+    "about": "关于"
+  },
+  "shortcuts": {
+    "title": "快捷键",
+    "global": "全局",
+    "toggle_theme": "切换主题",
+    "toggle_sidebar": "切换侧边栏",
+    "settings": "打开设置",
+    "search": "搜索"
+  },
+  "notifications": {
+    "title": "通知",
+    "test": "发送测试通知",
+    "test_title": "HeyEdit",
+    "test_body": "这是一条测试通知"
+  },
+  "clipboard": {
+    "title": "剪贴板",
+    "copy": "复制",
+    "paste": "粘贴",
+    "copied": "已复制到剪贴板",
+    "copy_failed": "复制失败"
+  },
+  "errors": {
+    "boundary_title": "出了点问题",
+    "boundary_message": "应用遇到了意外错误。",
+    "retry": "重试",
+    "report": "报告问题"
+  },
+  "editor": {
+    "untitled": "未命名",
+    "new_file": "新建文件",
+    "open_file": "打开文件",
+    "save_file": "保存",
+    "save_as": "另存为",
+    "no_open_file": "未打开文件",
+    "open_or_new": "打开一个文件或新建文件开始编辑",
+    "unsaved_changes": "未保存的更改",
+    "file_saved": "已保存",
+    "open_button": "打开文件",
+    "new_button": "新建文件",
+    "placeholder": "开始输入 Markdown...",
+    "word_count": "{{count}} 词",
+    "char_count": "{{count}} 字符"
+  },
+  "sidebar": {
+    "files": "文件",
+    "no_files": "暂无最近文件"
+  }
+}
