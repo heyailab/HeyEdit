@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { LayoutProvider } from "@/components/layouts";
 import { FileSidebar } from "@/components/sidebar/FileSidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToastContainer } from "@/components/ui/toast";
 import { EditorPage } from "@/pages/EditorPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { AboutPage } from "@/pages/AboutPage";
@@ -105,6 +106,7 @@ function AppContent() {
           }
         />
       </Routes>
+      <ToastContainer />
     </LayoutProvider>
   );
 }

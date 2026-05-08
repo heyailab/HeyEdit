@@ -157,3 +157,108 @@
 .tiptap-editor:focus {
   outline: none;
 }
+
+/* ── Syntax Highlighting Tokens ── */
+
+:root {
+  --syntax-keyword: oklch(0.45 0.18 25);       /* red */
+  --syntax-string: oklch(0.35 0.10 250);        /* blue */
+  --syntax-comment: oklch(0.55 0.01 100);       /* gray */
+  --syntax-function: oklch(0.45 0.18 290);      /* purple */
+  --syntax-number: oklch(0.40 0.12 260);        /* blue */
+  --syntax-type: oklch(0.40 0.12 260);
+  --syntax-variable: oklch(0.45 0.16 50);       /* orange */
+  --syntax-operator: oklch(0.35 0.01 100);
+  --syntax-property: oklch(0.35 0.12 260);
+  --syntax-punctuation: oklch(0.35 0.01 100);
+  --syntax-regexp: oklch(0.35 0.10 180);        /* teal */
+  --syntax-deletion: oklch(0.50 0.18 25);       /* red */
+  --syntax-addition: oklch(0.40 0.12 160);      /* green */
+  --syntax-title: oklch(0.45 0.18 290);
+  --syntax-attr: oklch(0.35 0.12 260);
+  --syntax-builtin: oklch(0.40 0.12 260);
+  --syntax-literal: oklch(0.40 0.12 260);
+  --syntax-meta: oklch(0.55 0.01 100);
+  --syntax-tag: oklch(0.40 0.12 160);
+  --syntax-name: oklch(0.40 0.12 160);
+  --syntax-selector-class: oklch(0.45 0.18 290);
+  --syntax-selector-id: oklch(0.45 0.18 290);
+  --syntax-selector-tag: oklch(0.40 0.12 160);
+  --syntax-params: oklch(0.35 0.01 100);
+  --syntax-link: oklch(0.35 0.12 260);
+  --syntax-quote: oklch(0.55 0.01 100);
+  --syntax-emphasis: oklch(0.35 0.01 100);
+  --syntax-strong: oklch(0.35 0.01 100);
+  --syntax-bullet: oklch(0.40 0.12 260);
+  --syntax-section: oklch(0.45 0.18 290);
+  --syntax-subst: oklch(0.50 0.16 25);
+}
+
+.dark {
+  --syntax-keyword: oklch(0.72 0.16 15);
+  --syntax-string: oklch(0.72 0.10 220);
+  --syntax-comment: oklch(0.55 0.01 100);
+  --syntax-function: oklch(0.72 0.14 295);
+  --syntax-number: oklch(0.68 0.11 235);
+  --syntax-type: oklch(0.68 0.11 235);
+  --syntax-variable: oklch(0.72 0.14 55);
+  --syntax-operator: oklch(0.75 0.01 100);
+  --syntax-property: oklch(0.68 0.11 235);
+  --syntax-punctuation: oklch(0.70 0.01 100);
+  --syntax-regexp: oklch(0.68 0.10 175);
+  --syntax-deletion: oklch(0.65 0.18 20);
+  --syntax-addition: oklch(0.62 0.12 155);
+  --syntax-title: oklch(0.72 0.14 295);
+  --syntax-attr: oklch(0.68 0.11 235);
+  --syntax-builtin: oklch(0.68 0.11 235);
+  --syntax-literal: oklch(0.68 0.11 235);
+  --syntax-meta: oklch(0.55 0.01 100);
+  --syntax-tag: oklch(0.62 0.12 155);
+  --syntax-name: oklch(0.62 0.12 155);
+  --syntax-selector-class: oklch(0.72 0.14 295);
+  --syntax-selector-id: oklch(0.72 0.14 295);
+  --syntax-selector-tag: oklch(0.62 0.12 155);
+  --syntax-params: oklch(0.75 0.01 100);
+  --syntax-link: oklch(0.68 0.11 235);
+  --syntax-quote: oklch(0.55 0.01 100);
+  --syntax-emphasis: oklch(0.75 0.01 100);
+  --syntax-strong: oklch(0.75 0.01 100);
+  --syntax-bullet: oklch(0.68 0.11 235);
+  --syntax-section: oklch(0.72 0.14 295);
+  --syntax-subst: oklch(0.65 0.16 20);
+}
+
+.tiptap-editor .hljs-keyword    { color: var(--syntax-keyword); }
+.tiptap-editor .hljs-string     { color: var(--syntax-string); }
+.tiptap-editor .hljs-comment    { color: var(--syntax-comment); font-style: italic; }
+.tiptap-editor .hljs-function   { color: var(--syntax-function); }
+.tiptap-editor .hljs-number     { color: var(--syntax-number); }
+.tiptap-editor .hljs-type       { color: var(--syntax-type); }
+.tiptap-editor .hljs-variable   { color: var(--syntax-variable); }
+.tiptap-editor .hljs-operator   { color: var(--syntax-operator); }
+.tiptap-editor .hljs-property   { color: var(--syntax-property); }
+.tiptap-editor .hljs-punctuation{ color: var(--syntax-punctuation); }
+.tiptap-editor .hljs-regexp     { color: var(--syntax-regexp); }
+.tiptap-editor .hljs-deletion   { color: var(--syntax-deletion); }
+.tiptap-editor .hljs-addition   { color: var(--syntax-addition); }
+.tiptap-editor .hljs-title      { color: var(--syntax-title); }
+.tiptap-editor .hljs-attr       { color: var(--syntax-attr); }
+.tiptap-editor .hljs-built_in   { color: var(--syntax-builtin); }
+.tiptap-editor .hljs-literal    { color: var(--syntax-literal); }
+.tiptap-editor .hljs-meta       { color: var(--syntax-meta); }
+.tiptap-editor .hljs-tag        { color: var(--syntax-tag); }
+.tiptap-editor .hljs-name       { color: var(--syntax-name); }
+.tiptap-editor .hljs-selector-class  { color: var(--syntax-selector-class); }
+.tiptap-editor .hljs-selector-id     { color: var(--syntax-selector-id); }
+.tiptap-editor .hljs-selector-tag    { color: var(--syntax-selector-tag); }
+.tiptap-editor .hljs-params     { color: var(--syntax-params); }
+.tiptap-editor .hljs-link       { color: var(--syntax-link); text-decoration: underline; }
+.tiptap-editor .hljs-quote      { color: var(--syntax-quote); }
+.tiptap-editor .hljs-emphasis   { color: var(--syntax-emphasis); font-style: italic; }
+.tiptap-editor .hljs-strong     { color: var(--syntax-strong); font-weight: 700; }
+.tiptap-editor .hljs-bullet     { color: var(--syntax-bullet); }
+.tiptap-editor .hljs-section    { color: var(--syntax-section); }
+.tiptap-editor .hljs-subst      { color: var(--syntax-subst); }
+
+/* Code block background inherits from the default pre styling */
+.tiptap-editor pre code .hljs-comment { font-style: italic; }

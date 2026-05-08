@@ -13,8 +13,10 @@ interface EditorState {
 
   // 设置当前打开的文件
   setOpenFile: (file: OpenFile | null) => void;
-  // 标记内容已被修改（dirty）
+  // 标记内容已被修改（dirty），需传入当前内容做比较
   markDirty: (content: string) => void;
+  // 轻量标记 dirty，不做字符串比较（大文件场景每次按键使用）
+  setDirty: () => void;
   // 标记为已保存（clean），更新 content 基准
   markSaved: (path: string, name: string, content: string) => void;
   // 添加到最近文件列表
@@ -37,9 +39,15 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   markDirty: (content) => {
     const { openFile } = get();
     if (!openFile) return;
-    // Only mark dirty if content actually differs from saved baseline
     const dirty = content !== openFile.content;
     set({ openFile: { ...openFile, isDirty: dirty } });
+  },
+
+  // 轻量标记 — 不做完整字符串比较，大文件场景每次按键调用
+  setDirty: () => {
+    const { openFile } = get();
+    if (!openFile || openFile.isDirty) return;
+    set({ openFile: { ...openFile, isDirty: true } });
   },
 
   markSaved: (path, name, content) => {

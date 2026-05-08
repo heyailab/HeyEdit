@@ -51,6 +51,7 @@ pub fn run() {
             commands::autostart::set_autostart_enabled,
             commands::updater::check_for_update,
             commands::file::read_file_with_encoding,
+            commands::file::write_file_utf8,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -31,9 +31,13 @@
     "clipboard-manager:allow-write-text",
     "dialog:default",
     "fs:default",
-	"fs:allow-exists",
+    "fs:allow-exists",
     {
       "identifier": "fs:allow-read",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-write",
       "allow": [{ "path": "**" }]
     },
     "log:default",

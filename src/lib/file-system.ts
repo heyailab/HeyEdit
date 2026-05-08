@@ -4,9 +4,9 @@
  * 读取文件使用 Rust 端自动编码检测，解决 GBK 乱码问题
  */
 import { invoke } from "@tauri-apps/api/core";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { open as dialogOpen, save as dialogSave } from "@tauri-apps/plugin-dialog";
 import { useEditorStore } from "@/stores/editor-store";
+import { showToast } from "@/components/ui/toast";
 import type { OpenFile } from "@/stores/editor-store";
 
 const MD_FILTERS = [
@@ -29,10 +29,19 @@ export async function openFile(): Promise<OpenFile | null> {
   if (!selected || Array.isArray(selected)) return null;
 
   // 使用 Rust 端命令，自动检测 GBK/UTF-8/UTF-16 等编码
-  const result = await invoke<{ content: string; encoding: string }>(
+  interface ReadResult {
+    content: string;
+    encoding: string;
+    size_warning?: string;
+  }
+  const result = await invoke<ReadResult>(
     "read_file_with_encoding",
     { path: selected }
   );
+
+  if (result.size_warning) {
+    showToast(result.size_warning, "warning");
+  }
 
   return {
     path: selected,
@@ -47,7 +56,7 @@ export async function saveFile(
   path: string,
   content: string
 ): Promise<void> {
-  await writeTextFile(path, content);
+  await invoke("write_file_utf8", { path, content });
 }
 
 /** 另存为：弹出对话框选择路径 */
@@ -59,7 +68,7 @@ export async function saveFileAs(content: string): Promise<{ path: string; name:
 
   if (!savePath) return null;
 
-  await writeTextFile(savePath, content);
+  await invoke("write_file_utf8", { path: savePath, content });
   return { path: savePath, name: baseName(savePath) };
 }
 

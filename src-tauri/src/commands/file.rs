@@ -1,9 +1,23 @@
 use serde::Serialize;
-use std::fs::read;
+use std::fs::{read, write};
 
 /// 读取文件并自动检测编码，返回 UTF-8 字符串
 #[tauri::command]
 pub async fn read_file_with_encoding(path: String) -> Result<ReadFileResult, String> {
+    // 先检查文件大小，大文件给出性能提示
+    let size_warning = match std::fs::metadata(&path) {
+        Ok(meta) => {
+            let size = meta.len();
+            if size > 1_000_000 {
+                let mb = size as f64 / 1_000_000.0;
+                Some(format!("文件大小 {:.1} MB，大文件可能影响编辑性能", mb))
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    };
+
     let bytes = read(&path).map_err(|e| format!("无法读取文件: {}", e))?;
 
     // 检测编码
@@ -12,13 +26,22 @@ pub async fn read_file_with_encoding(path: String) -> Result<ReadFileResult, Str
     Ok(ReadFileResult {
         content,
         encoding: encoding_label.to_string(),
+        size_warning,
     })
+}
+
+/// 以 UTF-8 编码写入文件
+#[tauri::command]
+pub async fn write_file_utf8(path: String, content: String) -> Result<(), String> {
+    write(&path, content.as_bytes()).map_err(|e| format!("无法保存文件: {}", e))
 }
 
 #[derive(Serialize)]
 pub struct ReadFileResult {
     pub content: String,
     pub encoding: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size_warning: Option<String>,
 }
 
 /// 检测字节流的编码并解码为 UTF-8 字符串

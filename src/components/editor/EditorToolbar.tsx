@@ -41,9 +41,9 @@ function ToolbarButton({ onClick, isActive, disabled, title, children, variant =
       className={cn(
         "inline-flex h-7 w-7 items-center justify-center rounded transition-colors",
         variant === "primary"
-          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+          ? "bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:border disabled:border-border"
           : "text-muted-foreground hover:text-foreground hover:bg-accent",
-        "disabled:pointer-events-none disabled:opacity-40",
+        "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
         isActive && variant === "default" && "bg-accent text-foreground"
       )}
     >
@@ -68,9 +68,18 @@ export const EditorToolbar = memo(function EditorToolbar({ editor, isPreview, se
   if (!editor) return null;
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center justify-between gap-0.5 border-b bg-background px-3 py-1.5 select-none">
+    <div className={cn(
+      "flex shrink-0 flex-wrap items-center justify-between gap-0.5 border-b bg-background px-3 py-1.5 select-none",
+      // 左侧模式指示条：编辑模式主色，预览模式灰色
+      isPreview
+        ? "border-l-2 border-l-muted-foreground/30 pl-[10px]"
+        : "border-l-2 border-l-primary pl-[10px]"
+    )}>
       {/* Left: formatting tools (hidden in preview) */}
-      <div className={cn("flex items-center gap-0.5", isPreview && "opacity-40 pointer-events-none")}>
+      <div className={cn(
+        "flex items-center gap-0.5 transition-opacity duration-200",
+        isPreview && "opacity-25 pointer-events-none cursor-not-allowed"
+      )}>
         {/* Undo / Redo */}
         <ToolbarButton
           title="撤销 (Ctrl+Z)"
