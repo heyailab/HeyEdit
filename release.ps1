@@ -1,5 +1,7 @@
 # HeyEdit - 一键发布脚本
-# Usage: .\release.ps1 -Version "0.1.5" -Notes "新增功能描述"
+# Usage:
+#   .\release.ps1 -Version "0.1.5" -Notes "- 新增功能A\n- 修复问题B"
+#   .\release.ps1 -Version "0.1.5"          # 自动从 git log 生成 notes
 
 param(
     [Parameter(Mandatory=$true)]
@@ -35,6 +37,51 @@ if (-not (Test-Path $KEY_FILE)) {
     Write-Host "Error: Signing key not found at $KEY_FILE" -ForegroundColor Red
     Write-Host "Run: rsign generate -p keys/heyedit.pub -s keys/heyedit.key --unencrypted" -ForegroundColor Yellow
     exit 1
+}
+
+# ── 辅助：从 git log 生成 release notes ──
+function Get-AutoNotes {
+    # 找到上一次 release 的 commit hash
+    $lastRelease = git log --grep="release: HeyEdit v" --grep="版本" --format="%H" -1 2>$null
+    $range = if ($lastRelease) { "$lastRelease..HEAD" } else { "-10" }
+
+    # 获取 commits（排除 release/chore/ci/docs 等非功能性提交）
+    $commits = git log $range --format="%s" --reverse 2>$null | ForEach-Object {
+        # 跳过 release 和纯维护提交
+        if ($_ -match "^release:" -or $_ -match "^chore:\s*(add release|version bump|bump)" -or $_ -match "^ci:" -or $_ -match "^docs:.*README") {
+            return $null
+        }
+
+        # 提取类型和消息
+        if ($_ -match "^(feat|fix|perf|refactor)(\(.*\))?:\s*(.+)") {
+            $type = $matches[1]
+            $msg  = $matches[3]
+            # 转换类型为中文标签
+            $label = switch ($type) {
+                "feat"     { "新增" }
+                "fix"      { "修复" }
+                "perf"     { "优化" }
+                "refactor" { "重构" }
+                default    { $type }
+            }
+            return "- [$label] $msg"
+        }
+        elseif ($_ -match "^(.+):") {
+            # 其他类型，去掉类型前缀直接显示
+            $msg = $_ -replace "^[^:]+:\s*", ""
+            return "- $msg"
+        }
+        else {
+            return "- $_"
+        }
+    } | Where-Object { $_ -ne $null }
+
+    # 去重
+    $unique = $commits | Select-Object -Unique
+    if ($unique.Count -eq 0) {
+        return "- 版本更新至 v$Version"
+    }
+    return $unique -join "`n"
 }
 
 # ── 1. 更新版本号 ──
@@ -89,8 +136,14 @@ $sigContent = Get-Content "$SIGNATURE" -Raw
 # 转义双引号用于 PHP 字符串
 $sigEscaped = $sigContent -replace '"', '\"'
 
-$defaultNotes = "## HeyEdit v$Version`n`n- 版本更新至 $Version"
-if ($Notes) {
+# 如果没有提供 Notes，自动从 git log 生成
+if (-not $Notes) {
+    Write-Host "  Generating notes from git log..." -ForegroundColor Gray
+    $autoNotes = Get-AutoNotes
+    $defaultNotes = "## HeyEdit v$Version`n`n$autoNotes"
+    Write-Host "  Generated notes:" -ForegroundColor Gray
+    $autoNotes -split "`n" | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+} else {
     $defaultNotes = "## HeyEdit v$Version`n`n$Notes"
 }
 
