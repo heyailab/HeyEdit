@@ -14,6 +14,10 @@ export interface AppInfo {
   name: string;
   version: string;
   tauri_version: string;
+  os: string;
+  arch: string;
+  build_type: string;
+  rust_version: string;
 }
 
 export interface UpdateInfo {

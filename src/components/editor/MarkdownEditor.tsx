@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useEditorStore } from "@/stores/editor-store";
 import { handleSave } from "@/lib/file-system";
 import { showToast } from "@/components/ui/toast";
+import { Loader2 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 
 const lowlight = createLowlight(common);
@@ -79,12 +80,20 @@ function getFileDir(filePath: string): string {
 }
 
 
+// 大文件阈值：超过此大小默认编辑模式 + 显示加载进度
+const LARGE_FILE_SIZE = 500_000; // 500KB
+
 export function MarkdownEditor() {
   const { t } = useTranslation();
-  const { openFile, markDirty, setDirty } = useEditorStore();
+  const { openFile, markDirty, setDirty, syncDirtyContent } = useEditorStore();
 
-  // New files (no path) start in edit mode; saved files start in preview
-  const [isPreview, _setIsPreview] = useState(() => !!openFile?.path);
+  const contentSize = openFile?.content?.length ?? 0;
+  const isLargeFile = contentSize > LARGE_FILE_SIZE;
+
+  // 大文件始终从编辑模式开始（跳过昂贵的预览渲染）
+  const [isPreview, _setIsPreview] = useState(
+    () => !!(openFile?.path && !isLargeFile)
+  );
 
   // Wrap setter: flush debounced content when switching to preview
   const setIsPreview = useCallback((value: boolean) => {
@@ -100,15 +109,22 @@ export function MarkdownEditor() {
             setCurrentContent(markdown);
           });
           markDirty(markdown);
+          syncDirtyContent(markdown);
         }
       }
     }
     _setIsPreview(value);
   }, [markDirty]);
-  // Local dirty state for instant UI response (large files: avoids full serialization on every keystroke)
+  // 加载状态：大文件解析期间显示进度提示
+  const [isLoading, setIsLoading] = useState(() => isLargeFile);
+  const [loadingProgress, setLoadingProgress] = useState(0); // 0-100
+  // 记录已加载完成的文件路径，避免重复解析
+  const loadedPathRef = useRef<string | undefined>(undefined);
+
+  // Local dirty state for instant UI response
   const [isDirtyLocal, setIsDirtyLocal] = useState(false);
 
-  // Track current editor content so preview always shows latest edits
+  // Track current editor content for preview
   const [currentContent, setCurrentContent] = useState(
     () => openFile?.content ?? ""
   );
@@ -157,7 +173,8 @@ export function MarkdownEditor() {
       CharacterCount,
       CodeBlockLowlight.configure({ lowlight }),
     ],
-    content: openFile?.content ?? "",
+    // 初始用空内容快速挂载，大文件内容由 useEffect 异步加载
+    content: "",
     contentType: "markdown",
     editorProps: {
       attributes: {
@@ -186,28 +203,150 @@ export function MarkdownEditor() {
           setCurrentContent(markdown);
         });
         markDirty(markdown); // accurate dirty check (compares full strings)
+        syncDirtyContent(markdown); // keep store in sync for close-with-save
       }, 300);
     },
   });
 
-  // When the open file changes, reset editor content and switch to preview
+  // 文件切换时加载内容（空文件/大文件避免重复解析）
   useEffect(() => {
     if (!editor) return;
     editorRef.current = editor;
+
+    const newPath = openFile?.path ?? "";
     const newContent = openFile?.content ?? "";
-    const currentMd = editor.getMarkdown();
-    if (currentMd !== newContent) {
-      editor.commands.setContent(newContent, { contentType: "markdown" });
-      setCurrentContent(newContent);
-      // Reset dirty state when file changes
-      isDirtyRef.current = false;
-      setIsDirtyLocal(false);
-      // Reset to preview for existing files; stay in edit for new files
-      if (openFile?.path) {
-        setIsPreview(true);
-      }
+
+    // 已加载过同一路径的内容，跳过
+    if (loadedPathRef.current === newPath) return;
+
+    // 清除上一文件的去抖定时器，防止旧回调污染新文件
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
-  }, [editor, openFile?.path]);
+    // 重置状态
+    isDirtyRef.current = false;
+    setIsDirtyLocal(false);
+
+    // 小文件/空内容：用 addToHistory: false 防止计入 undo 历史
+    if (!isLargeFile) {
+      const { state: s, view: v } = editor;
+      const { tr: t, doc: d, schema: sc } = s;
+      if (newContent) {
+        const storage = editor.storage as Record<string, any>;
+        const manager = storage.markdown?.manager;
+        const json = manager?.parse?.(newContent);
+        if (json) {
+          const node = sc.nodeFromJSON(json);
+          t.setMeta("addToHistory", false);
+          t.replaceWith(0, d.content.size, node.content);
+          v.dispatch(t);
+        } else {
+          editor.commands.setContent(newContent, { contentType: "markdown" });
+        }
+      } else {
+        editor.commands.setContent("", { contentType: "markdown" });
+      }
+      setCurrentContent(newContent);
+      loadedPathRef.current = newPath;
+      setIsLoading(false);
+      if (openFile?.path) {
+        _setIsPreview(true);
+      }
+      return;
+    }
+
+    // 大文件：分块加载，每块之间让出主线程保证 UI 响应
+    _setIsPreview(false); // 大文件强制编辑模式，禁止预览
+    setIsLoading(true);
+    setLoadingProgress(0);
+
+    // 按 ~100KB 分块，确保每块解析时间可控
+    const CHUNK_SIZE = 100_000;
+    const totalLen = newContent.length;
+    const chunks: string[] = [];
+    for (let i = 0; i < totalLen; i += CHUNK_SIZE) {
+      chunks.push(newContent.slice(i, i + CHUNK_SIZE));
+    }
+
+    let cancelled = false;
+    let chunkIndex = 0;
+
+    function processNext() {
+      if (cancelled || chunkIndex >= chunks.length) {
+        if (!cancelled) {
+          setCurrentContent(newContent);
+          loadedPathRef.current = newPath;
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const chunk = chunks[chunkIndex]!;
+      const { state, view } = editor;
+      const { tr, doc, schema } = state;
+      const storage = editor.storage as Record<string, any>;
+
+      // 用 MarkdownManager.parse 解析块 → ProseMirror Node
+      const manager = storage.markdown?.manager;
+      let parsedNode: any = null;
+      if (manager?.parse) {
+        try {
+          const json = manager.parse(chunk);
+          if (json && typeof json === "object") {
+            parsedNode = schema.nodeFromJSON(json);
+          }
+        } catch { /* 解析失败回退 */ }
+      }
+
+      // 关键：禁止分块加载进入 undo 历史
+      tr.setMeta("addToHistory", false);
+
+      if (chunkIndex === 0) {
+        if (parsedNode) {
+          tr.replaceWith(0, doc.content.size, parsedNode.content);
+        } else {
+          tr.insertText(chunk, 0, doc.content.size);
+        }
+      } else {
+        if (parsedNode) {
+          let offset = doc.content.size;
+          parsedNode.content.forEach((child: any) => {
+            tr.insert(offset, child);
+            offset += child.nodeSize;
+          });
+        } else {
+          tr.insertText(chunk, doc.content.size);
+        }
+      }
+
+      view.dispatch(tr);
+
+      chunkIndex++;
+      setLoadingProgress(Math.round((chunkIndex / chunks.length) * 100));
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        requestAnimationFrame(processNext);
+      });
+
+      chunkIndex++;
+      setLoadingProgress(Math.round((chunkIndex / chunks.length) * 100));
+
+      // 双 rAF：让浏览器在块之间绘制 UI 和进度条
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        requestAnimationFrame(processNext);
+      });
+    }
+
+    // 第一帧先确保加载动画已绘制
+    requestAnimationFrame(() => {
+      if (cancelled) return;
+      requestAnimationFrame(processNext);
+    });
+
+    return () => { cancelled = true; };
+  }, [editor, openFile?.path, isLargeFile]);
 
   // Clean up editor instance + pending debounce on unmount
   useEffect(() => {
@@ -235,6 +374,7 @@ export function MarkdownEditor() {
           setCurrentContent(markdown);
         });
         markDirty(markdown); // sync store to clean state
+        syncDirtyContent(markdown);
         isDirtyRef.current = false;
         setIsDirtyLocal(false);
         showToast("文件已保存", "success");
@@ -245,12 +385,12 @@ export function MarkdownEditor() {
     }
   }, [markDirty]);
 
-  // Keyboard shortcut: Ctrl+S / Cmd+S → save
+  // Keyboard shortcut: Ctrl+S save
   const handleKeyDown = useCallback(
-    async (e: React.KeyboardEvent) => {
+    (e: React.KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        await doSave();
+        doSave();
       }
     },
     [doSave]
@@ -282,7 +422,24 @@ export function MarkdownEditor() {
       />
 
       {/* Content area */}
-      <div className="flex-1 overflow-auto select-text">
+      <div className="flex-1 overflow-auto select-text relative">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+            <p className="text-sm text-muted-foreground mb-2">
+              正在加载文件...
+              <span className="block text-xs mt-1">
+                文件较大（{(contentSize / 1_000_000).toFixed(1)} MB），已加载 {loadingProgress}%
+              </span>
+            </p>
+            <div className="w-64 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
         {isPreview ? (
           <div className="mx-auto px-12 py-8">
             <div

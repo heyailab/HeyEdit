@@ -10,6 +10,7 @@ export interface OpenFile {
 interface EditorState {
   openFile: OpenFile | null;
   recentFiles: string[];    // 最近打开的文件路径列表
+  dirtyContent: string;     // 当前编辑器内容的实时镜像（用于侧边栏关闭时保存）
 
   // 设置当前打开的文件
   setOpenFile: (file: OpenFile | null) => void;
@@ -17,10 +18,14 @@ interface EditorState {
   markDirty: (content: string) => void;
   // 轻量标记 dirty，不做字符串比较（大文件场景每次按键使用）
   setDirty: () => void;
+  // 同步当前的 dirty 内容到 store（去抖后调用）
+  syncDirtyContent: (content: string) => void;
   // 标记为已保存（clean），更新 content 基准
   markSaved: (path: string, name: string, content: string) => void;
   // 添加到最近文件列表
   addRecentFile: (path: string) => void;
+  // 从最近文件列表中移除
+  removeRecentFile: (path: string) => void;
 }
 
 const MAX_RECENT = 20;
@@ -28,6 +33,7 @@ const MAX_RECENT = 20;
 export const useEditorStore = create<EditorState>()((set, get) => ({
   openFile: null,
   recentFiles: [],
+  dirtyContent: "",
 
   setOpenFile: (file) => {
     set({ openFile: file });
@@ -50,6 +56,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set({ openFile: { ...openFile, isDirty: true } });
   },
 
+  // 同步当前编辑器内容到 store（关闭时保存用）
+  syncDirtyContent: (content) => {
+    set({ dirtyContent: content });
+  },
+
   markSaved: (path, name, content) => {
     set({
       openFile: { path, name, content, isDirty: false },
@@ -62,5 +73,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const filtered = state.recentFiles.filter((p) => p !== path);
       return { recentFiles: [path, ...filtered].slice(0, MAX_RECENT) };
     });
+  },
+
+  removeRecentFile: (path) => {
+    set((state) => ({
+      recentFiles: state.recentFiles.filter((p) => p !== path),
+    }));
   },
 }));

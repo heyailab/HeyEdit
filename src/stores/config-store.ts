@@ -10,7 +10,7 @@ const DEFAULT_CONFIG: AppConfig = {
   layout: "sidebar",
   autostart: false,
   close_to_tray: true,
-  update_endpoint: "",
+  update_endpoint: "https://heyeidt.heyailab.com",
 };
 
 interface ConfigState {

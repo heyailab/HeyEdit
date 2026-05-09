@@ -1,17 +1,46 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { FilePlus, FolderOpen, FileText, Settings, Info } from "lucide-react";
+import { FilePlus, FolderOpen, FileText, Settings, Info, X } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { invoke } from "@tauri-apps/api/core";
 import { useEditorStore } from "@/stores/editor-store";
-import { openFile, newFile } from "@/lib/file-system";
+import { openFile, newFile, handleSave } from "@/lib/file-system";
+import { ask } from "@tauri-apps/plugin-dialog";
 
 export function FileSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { openFile: currentFile, recentFiles, setOpenFile } = useEditorStore();
+  const { openFile: currentFile, recentFiles, setOpenFile, removeRecentFile } = useEditorStore();
+
+  const handleRemoveFile = useCallback(
+    async (filePath: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      // 当前打开的文件：关闭编辑器
+      if (currentFile?.path === filePath) {
+        if (currentFile?.isDirty) {
+          const save = await ask("文件有未保存的更改，是否保存后关闭？", {
+            title: "HeyEdit",
+            kind: "warning",
+          });
+          if (save) {
+            // 用 store 中已同步的 dirtyContent 执行保存
+            const { dirtyContent } = useEditorStore.getState();
+            await handleSave(dirtyContent);
+            setOpenFile(null);
+          }
+          // 用户取消则不关闭，也不从列表中移除
+          return;
+        }
+        setOpenFile(null);
+      } else {
+        // 非当前文件：仅从列表中移除
+        removeRecentFile(filePath);
+      }
+    },
+    [currentFile, setOpenFile, removeRecentFile]
+  );
 
   const handleNew = useCallback(() => {
     setOpenFile(newFile());
@@ -50,22 +79,22 @@ export function FileSidebar() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Action buttons */}
-      <div className="flex items-center gap-1 border-b px-2 py-1.5">
+      <div className="flex items-center gap-0.5 border-b px-2 py-1.5">
         <button
           onClick={handleNew}
           title={t("editor.new_file")}
           className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          <FilePlus className="h-4 w-4" />
+          <FilePlus className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={handleOpen}
           title={t("editor.open_file")}
           className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          <FolderOpen className="h-4 w-4" />
+          <FolderOpen className="h-3.5 w-3.5" />
         </button>
-        <span className="ml-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <span className="text-xs font-medium text-muted-foreground">
           {t("sidebar.files")}
         </span>
       </div>
@@ -86,14 +115,21 @@ export function FileSidebar() {
                 onClick={() => handleOpenRecent(filePath)}
                 title={filePath}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors",
+                  "group flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )}
               >
                 <FileText className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{name}</span>
+                <span className="truncate flex-1">{name}</span>
+                <span
+                  className="shrink-0 rounded p-0.5 opacity-0 group-hover:opacity-100 hover:bg-accent transition-opacity"
+                  onClick={(e) => handleRemoveFile(filePath, e)}
+                  title={currentFile?.path === filePath ? "关闭文件" : "从列表中移除"}
+                >
+                  <X className="h-3 w-3" />
+                </span>
               </button>
             );
           })
