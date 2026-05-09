@@ -55,7 +55,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "RWSEdWC7hH3S1A0qQUL+Ki6KIHYIsyExKfz2L5B4cHQWskGc21NpmIbK",
       "endpoints": [
         "https://heyedit.heyailab.com/updates?target={{target}}&arch={{arch}}&current_version={{current_version}}"
       ],
