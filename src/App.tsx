@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { invoke } from "@tauri-apps/api/core";
 import { LayoutProvider } from "@/components/layouts";
 import { FileSidebar } from "@/components/sidebar/FileSidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -31,6 +32,13 @@ function AppContent() {
       i18n.changeLanguage(config.language);
     }
   }, [loaded, config.language, i18n]);
+
+  // Sync tray menu language to backend
+  useEffect(() => {
+    if (loaded) {
+      invoke("update_tray_language", { language: config.language }).catch(() => {});
+    }
+  }, [loaded, config.language]);
 
   // Sync theme to DOM
   useThemeSync();

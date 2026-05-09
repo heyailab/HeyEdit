@@ -46,6 +46,7 @@ pub fn run() {
             commands::window::is_maximized,
             commands::config::get_app_config,
             commands::config::set_app_config,
+            commands::config::update_tray_language,
             commands::system::get_app_info,
             commands::autostart::get_autostart_enabled,
             commands::autostart::set_autostart_enabled,

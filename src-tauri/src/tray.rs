@@ -1,20 +1,34 @@
 use tauri::{
     menu::{Menu, MenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent, TrayIconId},
     AppHandle, Manager,
 };
 
-pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let show_i = MenuItem::with_id(app, "show", "Show Window", true, None::<&str>)?;
-    let hide_i = MenuItem::with_id(app, "hide", "Hide Window", true, None::<&str>)?;
-    let separator = MenuItem::with_id(app, "sep", "─────────", false, None::<&str>)?;
-    let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+fn tray_strings(language: &str) -> (&'static str, &'static str, &'static str) {
+    if language == "zh" {
+        ("显示窗口", "隐藏窗口", "退出")
+    } else {
+        ("Show Window", "Hide Window", "Quit")
+    }
+}
 
-    let menu = Menu::with_items(app, &[&show_i, &hide_i, &separator, &quit_i])?;
+fn build_tray_menu(app: &AppHandle, language: &str) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
+    let (show_text, hide_text, quit_text) = tray_strings(language);
+
+    let show_i = MenuItem::with_id(app, "show", show_text, true, None::<&str>)?;
+    let hide_i = MenuItem::with_id(app, "hide", hide_text, true, None::<&str>)?;
+    let separator = MenuItem::with_id(app, "sep", "─────────", false, None::<&str>)?;
+    let quit_i = MenuItem::with_id(app, "quit", quit_text, true, None::<&str>)?;
+
+    Ok(Menu::with_items(app, &[&show_i, &hide_i, &separator, &quit_i])?)
+}
+
+pub fn create_tray(app: &AppHandle, language: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let menu = build_tray_menu(app, language)?;
 
     TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
-        .tooltip("TauriBase")
+        .tooltip("HeyEdit")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -54,6 +68,16 @@ pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         })
         .build(app)?;
 
-    log::info!("System tray created");
+    log::info!("System tray created with language: {}", language);
+    Ok(())
+}
+
+pub fn update_tray_language(app: &AppHandle, language: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let tray_id = TrayIconId::default();
+    if let Some(tray) = app.tray_by_id(&tray_id) {
+        let menu = build_tray_menu(app, language)?;
+        tray.set_menu(Some(menu))?;
+        log::info!("Tray menu updated to language: {}", language);
+    }
     Ok(())
 }

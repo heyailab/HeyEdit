@@ -34,3 +34,8 @@ pub async fn set_app_config(config: AppConfig) -> Result<(), String> {
     log::info!("Config updated: {:?}", config);
     Ok(())
 }
+
+#[command]
+pub fn update_tray_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
+    crate::tray::update_tray_language(&app, &language).map_err(|e| e.to_string())
+}
