@@ -38,3 +38,4 @@ chardetng = "0.1"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
