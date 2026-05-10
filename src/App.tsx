@@ -26,6 +26,7 @@ function AppContent() {
   // 统一的文件打开逻辑（供启动恢复 + 运行时事件共用）
   const openFileAtPath = useCallback(
     async (path: string) => {
+      console.log("[openFileAtPath] opening:", path);
       interface ReadResult {
         content: string;
         encoding: string;
@@ -33,6 +34,7 @@ function AppContent() {
       }
       try {
         const result = await invoke<ReadResult>("read_file_with_encoding", { path });
+        console.log("[openFileAtPath] loaded, encoding:", result.encoding, "size:", result.content.length);
         if (result.size_warning) {
           console.warn(result.size_warning);
         }
@@ -43,7 +45,7 @@ function AppContent() {
           isDirty: false,
         });
       } catch (err) {
-        console.error("Failed to open file from system:", err);
+        console.error("[openFileAtPath] failed:", err);
       }
     },
     [setOpenFile],
@@ -72,11 +74,14 @@ function AppContent() {
   useEffect(() => {
     getPendingFiles()
       .then((files) => {
+        console.log("[startup] getPendingFiles returned:", files.length, "files:", files);
         for (const path of files) {
           openFileAtPath(path);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("[startup] getPendingFiles failed:", err);
+      });
   }, [openFileAtPath]);
 
   // Sync theme to DOM
@@ -92,6 +97,7 @@ function AppContent() {
 
     listen<string>("open-file", (event) => {
       const path = event.payload;
+      console.log("[open-file event] received path:", path);
       if (!path) return;
       openFileAtPath(path);
     }).then((fn) => {

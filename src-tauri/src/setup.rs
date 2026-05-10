@@ -28,15 +28,40 @@ fn read_language(app: &App) -> String {
 /// 解析命令行参数中的文件路径（Windows 上右键打开 / 文件关联传参）
 fn parse_cli_file_paths() -> Vec<String> {
     let args: Vec<String> = std::env::args().collect();
-    // args[0] = 可执行文件路径，后续可能是文件路径
-    args.iter()
-        .skip(1)
-        .filter(|arg| {
-            let p = Path::new(arg);
-            p.is_absolute() && p.exists() && p.is_file()
-        })
-        .cloned()
-        .collect()
+    log::info!("Raw CLI args ({}): {:?}", args.len(), args);
+
+    let mut paths: Vec<String> = Vec::new();
+    for arg in args.iter().skip(1) {
+        log::info!("CLI arg check: '{}'", arg);
+
+        let p = Path::new(arg);
+
+        // 直接判断是否为存在的文件（不再强制要求 is_absolute，因为 Windows 上
+        // 部分场景下传入的路径经过 tao/Tauri 处理后可能变成相对路径）
+        if p.exists() && p.is_file() {
+            log::info!("CLI file path accepted: {}", arg);
+            // 尽量转成绝对路径存储
+            let canonical = p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+            paths.push(canonical.to_string_lossy().to_string());
+            continue;
+        }
+
+        // 部分场景下路径可能被包装为 file:// URL
+        if let Some(stripped) = arg
+            .strip_prefix("file:///")
+            .or_else(|| arg.strip_prefix("file://"))
+        {
+            let file_path = Path::new(stripped);
+            if file_path.exists() && file_path.is_file() {
+                let canonical = file_path.canonicalize().unwrap_or_else(|_| file_path.to_path_buf());
+                let s = canonical.to_string_lossy().to_string();
+                log::info!("CLI file URL accepted: {}", s);
+                paths.push(s);
+            }
+        }
+    }
+
+    paths
 }
 
 pub fn init(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
@@ -58,12 +83,15 @@ pub fn init(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     // 处理启动时通过文件关联 / 右键打开传入的文件路径
     let file_paths = parse_cli_file_paths();
     if !file_paths.is_empty() {
-        log::info!("CLI file paths detected: {:?}", file_paths);
+        log::info!("Will open {} file(s) from CLI", file_paths.len());
         let handle = app.handle();
 
         // 存入待处理列表（前端未就绪时 fallback）
         if let Some(pending) = handle.try_state::<PendingFiles>() {
             pending.0.lock().unwrap().extend(file_paths.clone());
+            log::info!("Stored {} path(s) in PendingFiles", file_paths.len());
+        } else {
+            log::warn!("PendingFiles state not available in setup!");
         }
 
         // 显示并聚焦窗口，通知前端打开文件
