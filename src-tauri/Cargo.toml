@@ -1,6 +1,6 @@
 [package]
 name = "heyedit"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 description = "HeyEdit - A clean, fast Markdown editor"
 
@@ -38,4 +38,5 @@ chardetng = "0.1"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
 
