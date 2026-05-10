@@ -25,3 +25,6 @@ export const setAutostartEnabled = (enabled: boolean) =>
 
 // Updater commands
 export const checkForUpdate = () => invoke<UpdateInfo>("check_for_update");
+
+// File association commands
+export const getPendingFiles = () => invoke<string[]>("get_pending_files");

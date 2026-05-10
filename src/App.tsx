@@ -2,6 +2,7 @@ import { useEffect, useCallback } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { LayoutProvider } from "@/components/layouts";
 import { FileSidebar } from "@/components/sidebar/FileSidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -15,11 +16,38 @@ import { useThemeSync } from "@/stores/theme-store";
 import { useLogAttach, useConsoleForward } from "@/hooks/use-Log";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { openFile, newFile } from "@/lib/file-system";
+import { getPendingFiles } from "@/lib/commands";
 
 function AppContent() {
   const { i18n } = useTranslation();
   const { config, load, loaded, setTheme } = useConfigStore();
   const { setOpenFile } = useEditorStore();
+
+  // 统一的文件打开逻辑（供启动恢复 + 运行时事件共用）
+  const openFileAtPath = useCallback(
+    async (path: string) => {
+      interface ReadResult {
+        content: string;
+        encoding: string;
+        size_warning?: string;
+      }
+      try {
+        const result = await invoke<ReadResult>("read_file_with_encoding", { path });
+        if (result.size_warning) {
+          console.warn(result.size_warning);
+        }
+        setOpenFile({
+          path,
+          name: path.replace(/\\/g, "/").split("/").pop() ?? path,
+          content: result.content,
+          isDirty: false,
+        });
+      } catch (err) {
+        console.error("Failed to open file from system:", err);
+      }
+    },
+    [setOpenFile],
+  );
 
   // Load persisted config on mount
   useEffect(() => {
@@ -40,12 +68,40 @@ function AppContent() {
     }
   }, [loaded, config.language]);
 
+  // 检查启动时通过文件关联/右键打开传入的文件路径
+  useEffect(() => {
+    getPendingFiles()
+      .then((files) => {
+        for (const path of files) {
+          openFileAtPath(path);
+        }
+      })
+      .catch(() => {});
+  }, [openFileAtPath]);
+
   // Sync theme to DOM
   useThemeSync();
 
   // Attach log bridge
   useLogAttach();
   useConsoleForward();
+
+  // 监听系统文件关联/右键打开事件（运行时）
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    listen<string>("open-file", (event) => {
+      const path = event.payload;
+      if (!path) return;
+      openFileAtPath(path);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [openFileAtPath]);
 
   // Global keyboard shortcuts
   const handleOpenFile = useCallback(async () => {
