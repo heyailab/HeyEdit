@@ -95,7 +95,7 @@ Write-Host "  package.json  -> $Version" -ForegroundColor Green
 
 # Cargo.toml
 $cargoContent = Get-Content "$PROJECT_ROOT\src-tauri\Cargo.toml" -Raw
-$cargoContent = $cargoContent -replace 'version = "[\d\.]+"', "version = `"$Version`""
+$cargoContent = $cargoContent -replace '(?m)^version = "[\d\.]+"', "version = `"$Version`""
 Set-Content "$PROJECT_ROOT\src-tauri\Cargo.toml" $cargoContent -Encoding UTF8
 Write-Host "  Cargo.toml    -> $Version" -ForegroundColor Green
 
